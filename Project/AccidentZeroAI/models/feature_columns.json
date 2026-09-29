@@ -1,0 +1,13 @@
+[
+  "shift_hours",
+  "overtime_hours",
+  "worker_experience",
+  "equipment_age",
+  "maintenance_score",
+  "temperature",
+  "humidity",
+  "inspection_score",
+  "fatigue_index",
+  "equipment_risk",
+  "weather_severity"
+]

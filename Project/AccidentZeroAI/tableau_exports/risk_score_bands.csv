@@ -1,0 +1,5 @@
+risk_band,count
+LOW (<30),278
+CRITICAL (>=80),144
+HIGH (60-79.99),45
+MODERATE (30-59.99),33

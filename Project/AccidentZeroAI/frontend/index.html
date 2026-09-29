@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AccidentZero AI Dashboard</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div class="dashboard">
+
+        <header>
+            <h1>AccidentZero AI</h1>
+            <p>Intelligent Safety Risk Monitoring System</p>
+        </header>
+
+        <div class="grid">
+
+            <div class="panel input-panel">
+                <h2>⚙ Safety Parameters</h2>
+
+                <div class="input-group">
+                    <label>Shift Hours</label>
+                    <input id="shift_hours" type="number" placeholder="e.g. 10">
+                </div>
+
+                <div class="input-group">
+                    <label>Overtime Hours</label>
+                    <input id="overtime_hours" type="number" placeholder="e.g. 2">
+                </div>
+
+                <div class="input-group">
+                    <label>Worker Experience</label>
+                    <input id="worker_experience" type="number" placeholder="e.g. 5">
+                </div>
+
+                <div class="input-group">
+                    <label>Equipment Age</label>
+                    <input id="equipment_age" type="number" placeholder="e.g. 6">
+                </div>
+
+                <div class="input-group">
+                    <label>Maintenance Score</label>
+                    <input id="maintenance_score" type="number" placeholder="e.g. 75">
+                </div>
+
+                <div class="input-group">
+                    <label>Temperature</label>
+                    <input id="temperature" type="number" placeholder="e.g. 35">
+                </div>
+
+                <div class="input-group">
+                    <label>Humidity</label>
+                    <input id="humidity" type="number" placeholder="e.g. 70">
+                </div>
+
+                <div class="input-group">
+                    <label>Inspection Score</label>
+                    <input id="inspection_score" type="number" placeholder="e.g. 65">
+                </div>
+
+                <button onclick="predictRisk()">🚨 Predict Risk</button>
+
+                <hr class="divider" />
+
+                <h2>📄 Batch from Excel</h2>
+                <div class="input-group">
+                    <label>Upload Excel (.xlsx) with one or many sheets</label>
+                    <input id="excel_file" type="file" accept=".xlsx">
+                </div>
+                <button onclick="predictFromExcel()">📥 Predict from Excel</button>
+                <div id="excel_status" class="chart-caption" style="margin-top:6px;"></div>
+
+                <hr class="divider" />
+
+                <h2>📊 Advanced Analysis</h2>
+                <button onclick="computeCorrelation()">📈 Compute Correlation Matrix</button>
+                <div id="corrStatus" class="chart-caption" style="margin-top: 5px;"></div>
+                <div id="corrMatrix" class="table-wrap" style="margin-top: 10px;"></div>
+
+                <hr class="divider" />
+
+                <h2>🖼 Image Risk Analysis</h2>
+                <p class="muted" style="margin-bottom:10px;">Upload one or more photos (max 16)—the AI inspects each scene (hazards, environment, equipment, people/PPE). No text prompt. Scores are aggregated as the <strong>mean</strong> of per-image risk %.</p>
+                <div class="input-group">
+                    <label>Scene photos (workplace / equipment / weather)</label>
+                    <input id="risk_image" type="file" accept="image/*" multiple>
+                </div>
+                <div id="risk_image_previews" class="image-previews-grid"></div>
+                <button type="button" onclick="analyzeRiskImage()">🔍 Run automatic scene analysis</button>
+                <div class="row-inline" style="margin-top:10px;">
+                    <button type="button" class="btn-inline" id="btn_add_image_risk" onclick="applyImageRiskToMainOutput()" disabled>Add image analysis to main output</button>
+                    <button type="button" class="btn-inline" id="btn_revert_image_risk" onclick="revertImageBlendFromMainOutput()" disabled>Revert image blend</button>
+                </div>
+                <p id="image_blend_hint" class="muted small" style="margin-top:8px;"></p>
+                <div id="image_analysis_status" class="chart-caption" style="margin-top:8px;"></div>
+                <div id="image_analysis_result" class="insight-box"></div>
+            </div>
+
+            <div class="panel results-panel">
+                <h2>📊 Risk Intelligence Output</h2>
+
+                <div class="metric">
+                    <span>Accident Probability</span>
+                    <strong id="probability">--</strong>
+                </div>
+
+                <div class="metric">
+                    <span>Risk Score</span>
+                    <strong id="risk_score">--</strong>
+                </div>
+
+                <div class="metric">
+                    <span>Risk Level</span>
+                    <strong id="risk_level" class="risk-badge">--</strong>
+                </div>
+                <p id="main_output_blend_note" class="muted small" style="margin-top:8px;"></p>
+
+                <div id="batch_summary" class="batch-summary"></div>
+
+                <div class="source-analysis-panel">
+                    <h3 class="section-sub">Excel vs Image Individual Analysis</h3>
+                    <p class="muted small">Shows source-wise risk independently and fused risk in one place.</p>
+                    <div class="source-metrics-grid">
+                        <div class="metric source-metric">
+                            <span>Excel Risk (individual)</span>
+                            <strong id="source_excel_risk">--</strong>
+                        </div>
+                        <div class="metric source-metric">
+                            <span>Image Risk (individual)</span>
+                            <strong id="source_image_risk">--</strong>
+                        </div>
+                        <div class="metric source-metric">
+                            <span>Fused Risk</span>
+                            <strong id="source_fused_risk">--</strong>
+                        </div>
+                    </div>
+                    <div id="source_analysis_note" class="chart-caption"></div>
+                    <div class="chart-section" style="margin-top:10px;">
+                        <h3>Source-wise Risk Comparison</h3>
+                        <canvas id="sourceRiskChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="column-distributions-panel">
+                    <h3 class="section-sub">Feature distributions — before cleaning</h3>
+                    <p class="muted small">Loaded / preprocessed values (missing values may appear as gaps).</p>
+                    <div class="row-inline">
+                        <label for="column_chart_type">Chart type</label>
+                        <select id="column_chart_type">
+                            <option value="line">Line</option>
+                            <option value="bar" selected>Bar</option>
+                            <option value="histogram">Histogram</option>
+                            <option value="scatter">Scatter (index vs value)</option>
+                        </select>
+                        <button type="button" class="btn-inline" onclick="refreshColumnCharts()">Redraw charts</button>
+                    </div>
+                    <div id="column_charts_status" class="chart-caption"></div>
+                    <div id="column_charts_wrap_original" class="column-charts-grid"></div>
+
+                    <h3 class="section-sub section-sub-spaced">Feature distributions — after cleaning</h3>
+                    <p class="muted small">After imputation and missing-value handling (same chart type as above).</p>
+                    <div id="column_charts_wrap_cleaned" class="column-charts-grid"></div>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Model Ensemble Overview</h3>
+                    <canvas id="modelOverviewChart"></canvas>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Risk Distribution (Batch)</h3>
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Selected Row – Model Comparison</h3>
+                    <canvas id="rowModelChart"></canvas>
+                    <p id="rowModelCaption" class="chart-caption">
+                        Click a row in the table below to inspect its model outputs.
+                    </p>
+                </div>
+
+                <div class="table-wrap">
+                    <table id="batch_table" class="batch-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>XGB</th>
+                                <th>LGBM</th>
+                                <th>CAT</th>
+                                <th>HistGBM</th>
+                                <th>ExtraTrees</th>
+                                <th>LSTM</th>
+                                <th>ISO</th>
+                                <th>Stacking</th>
+                                <th>Ensemble (trees)</th>
+                                <th>Ensemble (all)</th>
+                                <th>Risk Score</th>
+                                <th>Risk Level</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div id="manual_imputation_note" class="chart-caption" style="margin-top:12px;"></div>
+            </div>
+
+        </div>
+
+        <div class="stack-full">
+            <div class="panel">
+                <h2>Tableau Insights</h2>
+                <p class="muted">
+                    Interactive Tableau dashboard embedded for KPI tracking, trend analysis, and drill-down.
+                </p>
+                <div class="row-inline">
+                    <button type="button" class="btn-inline" onclick="refreshTableauEmbed()">Refresh Tableau View</button>
+                </div>
+                <div id="tableau_status" class="chart-caption" style="margin-bottom:10px;"></div>
+                <div class="tableau-embed-wrap">
+                    <iframe
+                        id="tableau_embed"
+                        title="Tableau Dashboard"
+                        loading="lazy"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>📋 Data quality &amp; missing values</h2>
+                <p class="muted">Excel / batch rows are imputed with KNN before charts and scoring. Original uploads are never overwritten on disk.</p>
+                <div id="imputation_panel" class="insight-box">Run Excel batch or manual predict to see imputation details.</div>
+            </div>
+
+            <div class="panel">
+                <h2>⚠ Accident cause analysis</h2>
+                <div id="cause_panel" class="insight-box">
+                    Provide predictions (manual or Excel) to rank contributing factors. Image analysis refines context when available.
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🛡 Prevention &amp; recommendations</h2>
+                <div id="prevention_panel" class="insight-box">
+                    Recommendations appear after analysis runs.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="config.js?v=1.0.1"></script>
+    <script src="script.js?v=1.1.13"></script>
+</body>
+
+</html>

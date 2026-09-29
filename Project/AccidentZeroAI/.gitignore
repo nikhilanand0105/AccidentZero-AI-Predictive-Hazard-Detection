@@ -1,0 +1,13 @@
+.env
+.venv/
+.venv311/
+__pycache__/
+*.pyc
+__MACOSX/
+catboost_info/
+.deps/
+models/*.pkl
+models/*.keras
+data/_fusion_charts/
+data/run_log_artifacts_*/
+data/simple_visual_artifacts_*/

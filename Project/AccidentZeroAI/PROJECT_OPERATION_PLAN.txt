@@ -1,0 +1,161 @@
+# Project Operation Plan (`PROJECT_OPERATION_PLAN.txt`)
+
+## Summary
+This runbook operates **all features at least once**: original ML training, API endpoints, frontend charts, Excel batch flow, image risk flow, Excel-vs-image individual frontend analysis, advanced fusion extension, simplified single-visual fusion, and timestamped evidence generation.
+
+## Key Features and How to Use Them (with Commands)
+
+### 1) Environment Setup (one-time)
+```powershell
+cd "G:\review-ready-fds\AccidentZeroAI (2)\AccidentZeroAI (2)\AccidentZeroAI\AccidentZeroAI"
+
+py -3.11 -m venv .venv
+.\.venv\Scripts\python -m pip install --upgrade pip
+.\.venv\Scripts\pip install -r requirements.txt
+```
+
+If image/plot extras are missing:
+```powershell
+.\.venv\Scripts\pip install matplotlib seaborn pillow requests openpyxl pandas numpy
+```
+
+### 2) Original Core Pipeline (training + saved models)
+Runs existing project training/evaluation and saves artifacts.
+```powershell
+.\.venv\Scripts\python main.py
+```
+Expected outputs include model files in `models\` and `data\batch_predictions.csv`.
+
+### 3) Start Backend + Frontend
+Terminal A:
+```powershell
+cd "G:\review-ready-fds\AccidentZeroAI (2)\AccidentZeroAI (2)\AccidentZeroAI\AccidentZeroAI"
+.\.venv\Scripts\python -m uvicorn api.app:app --host 127.0.0.1 --port 8000
+```
+
+Terminal B:
+```powershell
+cd "G:\review-ready-fds\AccidentZeroAI (2)\AccidentZeroAI (2)\AccidentZeroAI\AccidentZeroAI\frontend"
+..\.\.venv\Scripts\python -m http.server 5500
+```
+
+Open:
+- `http://127.0.0.1:5500/index.html`
+
+### 4) Original Frontend Features (use once each)
+1. Manual risk prediction:
+- Fill safety inputs and click `Predict Risk`.
+
+2. Excel batch prediction:
+- Upload `data\sample_upload.xlsx` (or other `.xlsx`) and click `Predict from Excel`.
+
+3. Correlation matrix:
+- Click `Compute Correlation Matrix`.
+
+4. Existing charts visible in UI:
+- Feature distributions (before/after cleaning)
+- Model Ensemble Overview
+- Risk Distribution (Batch)
+- Selected Row Model Comparison
+
+### 5) Image Risk Features (use once each)
+1. Single/multi image analysis:
+- Upload images in `Image Risk Analysis` and click `Run automatic scene analysis`.
+
+2. Blend controls:
+- Click `Add image analysis to main output`.
+- Then click `Revert image blend`.
+
+3. Quota-safe behavior:
+- If Gemini quota is exceeded, backend now returns fallback result (workflow still continues).
+
+### 6) New Frontend Feature Just Added (Excel vs Image Individual Analysis)
+In the right panel (below batch summary), verify:
+- `Excel Risk (individual)`
+- `Image Risk (individual)`
+- `Fused Risk`
+- `Source-wise Risk Comparison` bar chart
+
+How to populate:
+1. Run Excel batch prediction first.
+2. Run image analysis.
+3. Panel auto-updates with source-wise risks and fused value.
+
+### 7) Advanced Extension (separate analyses + fusion workbook)
+```powershell
+cd "G:\review-ready-fds\AccidentZeroAI (2)\AccidentZeroAI (2)\AccidentZeroAI\AccidentZeroAI"
+.\.venv\Scripts\python utils\data_fusion_excel_extension.py `
+  --input-excel data\safety_data.xlsx `
+  --input-image data\image_table_input.png `
+  --output-excel data\fusion_extension_output.xlsx
+```
+
+Open:
+- `data\fusion_extension_output.xlsx`
+
+Verify sheets:
+1. Original Data  
+2. Image Extracted Data  
+3. Dataset_A  
+4. Dataset_B  
+5. Individual Analysis - Original  
+6. Individual Analysis - Image Data  
+7. Fused Dataset  
+8. Combined Analysis  
+9. Final Comparison
+
+### 8) Simplified Extension (single visualization type only)
+```powershell
+.\.venv\Scripts\python utils\simple_single_visual_fusion.py `
+  --input-excel data\safety_data.xlsx `
+  --output-excel data\simple_single_visual_output.xlsx `
+  --image-count 8
+```
+
+Open:
+- `data\simple_single_visual_output.xlsx`
+
+Verify:
+- `Original Data` (Excel bar visualization)
+- `Image Data` (image-derived + imputed + bar visualization)
+- `Fused Data` (final bar + Excel/Image contribution %)
+- `Run Log`
+
+### 9) Timestamped Evidence Pack (screenshots + run log)
+```powershell
+.\.venv\Scripts\python utils\generate_extension_run_log.py `
+  --workbook data\fusion_extension_output.xlsx `
+  --source-image data\image_table_input.png `
+  --charts-dir data\_fusion_charts
+```
+
+Output folder:
+- `data\run_log_artifacts_<timestamp>\`
+Contains:
+- `run_log.txt`
+- `index.md`
+- `screenshots\*.png`
+
+## Public/Interface Changes to Know
+- Frontend UI now includes a new section: **Excel vs Image Individual Analysis** with source-wise risk bar chart.
+- Image analysis response may include `analysis_mode: "local_quota_fallback"` when Gemini quota is exhausted.
+- Existing API endpoints remain unchanged in path and usage (`/predict`, `/predict/excel`, `/analyze/image`, `/analyze/images`, `/insights/accident`).
+
+## Test Plan (must pass)
+1. `main.py` runs without crash and model artifacts exist.
+2. Backend responds at `http://127.0.0.1:8000`.
+3. Frontend loads at `http://127.0.0.1:5500/index.html`.
+4. Manual prediction updates main metrics.
+5. Excel upload populates batch table and existing charts.
+6. Image analysis returns risk result (Gemini or fallback).
+7. New source-wise frontend panel shows Excel/Image/Fused risks.
+8. `fusion_extension_output.xlsx` generated with all 9 sheets.
+9. `simple_single_visual_output.xlsx` generated with contribution %.
+10. `run_log_artifacts_<timestamp>` contains log + screenshots.
+
+## Assumptions and Defaults
+- Windows + PowerShell environment.
+- Project root path is exactly:
+  `G:\review-ready-fds\AccidentZeroAI (2)\AccidentZeroAI (2)\AccidentZeroAI\AccidentZeroAI`
+- `.env` contains Gemini key and current model defaults.
+- If Gemini quota is unavailable, fallback mode is acceptable for demo continuity.

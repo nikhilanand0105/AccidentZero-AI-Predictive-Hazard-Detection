@@ -1,0 +1,17 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+xgboost
+lightgbm
+catboost
+tensorflow
+joblib
+fastapi
+uvicorn[standard]
+openpyxl
+python-multipart
+python-dotenv
+requests
+pillow
